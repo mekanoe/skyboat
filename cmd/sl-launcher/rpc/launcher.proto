@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package launcher;
+///
+service Launcher {
+
+	rpc Launch (LaunchRequest) returns (LaunchedInstance) {}
+
+}
+
+message LaunchRequest {
+
+	string image = 1;
+
+}
+
+message LaunchedInstance {
+
+	string node_ip  = 1;
+	int32 port 		= 2;
+
+}
