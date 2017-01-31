@@ -20,6 +20,7 @@ all: bin grpc
 bin: $(BINARIES) 
 grpc: $(PROTOTARGETS)
 
+$(BINARIES): grpc
 $(BINARIES): $(SOURCES)
 	$(GO) build $(LDFLAGS) -v ./cmd/$@/$@.go
 
