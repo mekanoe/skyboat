@@ -24,6 +24,6 @@ _testmain.go
 *.prof
 
 vendor/*/*
-*.pb.go
 
 /sl-*
+.gotmp

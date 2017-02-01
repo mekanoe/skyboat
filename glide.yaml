@@ -2,3 +2,10 @@ package: github.com/kayteh/saving-light
 import:
 - package: google.golang.org/grpc
   version: ^1.0.5
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: github.com/grpc-ecosystem/grpc-gateway
+  version: 6863684
+  subpackages:
+  - third_party/googleapis/google/api
