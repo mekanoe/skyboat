@@ -1,0 +1,49 @@
+{{block "main" .}}package api
+
+//
+// ATTENTION: This file is generated automagically.
+// Do not touch it. Do not pass go. Do not collect $200.
+// Instead run 'go generate' or 'make gen' to build this file.
+//
+
+import (
+	mw "github.com/kayteh/spaceplane/restokit/middleware"
+    "github.com/buaazp/fasthttprouter"
+)
+
+// FetchAPIRoutes is a generated function that takes a router, and injects the api routes into it.
+func FetchAPIRoutes(router *fasthttprouter.Router) {
+	{{range .}}
+		router.Handle("{{.Verb}}", "{{.URI}}", 
+		{{- if .Versioned}}
+			{{- template "versionedRoute" .}}
+		{{else}}
+			{{- template "regularRoute" .Versions.default}}
+		{{end}})
+	{{else}}
+	// no routes
+	{{end}}
+}
+{{end}}
+
+{{block "regularRoute" .}}
+
+	{{- range .Middleware}}mw.{{.Name}}({{end}}{{.FuncName}},
+{{- range .Middleware}}
+	{{- if .HasFlags}}
+	&mw.{{.Name}}Opts{
+		{{- range .SecFlags}}
+			{{.}}: true,
+		{{end}}
+	}{{end}}),
+{{end}}
+
+{{end}}
+
+{{block "versionedRoute" .}}
+	mw.VersionedRoute(mw.VersionedRouteMap{
+		{{- range $k, $r := .Versions}}
+		"{{$k}}": {{- template "regularRoute" $r}}
+		{{end}}
+	}),
+{{end}}

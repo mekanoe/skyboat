@@ -1,38 +1,20 @@
-hash: 9f8b2e4309b87e5482199699ef9054f135738a81e28f1ee180b6a8b698b060ca
-updated: 2017-01-31T19:35:46.701051764-06:00
+hash: 753aeb5cf09d35a1ed5b518d743cb9cae6c9c7b1b710fc849734a1dd98a86065
+updated: 2017-07-14T00:44:34.032979442-05:00
 imports:
-- name: github.com/golang/protobuf
-  version: 8ee79997227bf9b34611aee7946ae64735e6fd93
+- name: github.com/buaazp/fasthttprouter
+  version: ade4e2031af3aed7fffd241084aad80a58faf421
+- name: github.com/klauspost/compress
+  version: 14c9a76e3c95e47f8ccce949bba2c1101a8b85e6
   subpackages:
-  - proto
-  - protoc-gen-go/descriptor
-- name: github.com/grpc-ecosystem/grpc-gateway
-  version: 686368427ddb9a51628d63db6c74fbc96a206e1f
+  - flate
+  - gzip
+  - zlib
+- name: github.com/klauspost/cpuid
+  version: 09cded8978dc9e80714c4d85b0322337b0a1e5e0
+- name: github.com/klauspost/crc32
+  version: 1bab8b35b6bb565f92cbc97939610af9369f942a
+- name: github.com/valyala/fasthttp
+  version: d42167fd04f636e20b005e9934159e95454233c7
   subpackages:
-  - third_party/googleapis/google/api
-- name: golang.org/x/net
-  version: 6cdc0daab091c43fc46193327e0047b4f883c613
-  subpackages:
-  - context
-  - http2
-  - http2/hpack
-  - idna
-  - internal/timeseries
-  - lex/httplex
-  - trace
-- name: google.golang.org/grpc
-  version: 708a7f9f3283aa2d4f6132d287d78683babe55c8
-  subpackages:
-  - codes
-  - credentials
-  - grpclog
-  - internal
-  - metadata
-  - naming
-  - peer
-  - reflection
-  - reflection/grpc_reflection_v1alpha
-  - stats
-  - tap
-  - transport
+  - fasthttputil
 testImports: []

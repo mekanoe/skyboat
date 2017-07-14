@@ -1,11 +1,6 @@
 package: github.com/kayteh/spaceplane
 import:
-- package: google.golang.org/grpc
-  version: ^1.0.5
-- package: golang.org/x/net
-  subpackages:
-  - context
-- package: github.com/grpc-ecosystem/grpc-gateway
-  version: 6863684
-  subpackages:
-  - third_party/googleapis/google/api
+- package: github.com/buaazp/fasthttprouter
+  version: ^0.1.1
+- package: github.com/valyala/fasthttp
+  version: ^20160617.0.0
