@@ -19,7 +19,7 @@ SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 BINARIES := $(shell ls -d cmd/* | sed 's/cmd\(.*\)/cmd\1\1/g')
 
 # The name of this repo in case things need it below.
-SL = github.com/kayteh/saving-light
+SL = github.com/kayteh/spaceplane
 
 
 ################
@@ -55,7 +55,7 @@ PROTOTARGETS := $(PROTOBUF:.proto=.pb.go)
 ## Docker vars
 
 # Our repo org root
-DOCKER_TAG_PREFIX = quay.io/saving-light/
+DOCKER_TAG_PREFIX = quay.io/spaceplane/
 
 # The image tag, hopefully just the git hash.
 DOCKER_TAG_SUFFIX ?= :$(HASH)$(DIRTY)
@@ -80,7 +80,7 @@ bin: $(BINARIES)
 $(BINARIES): NAME = $(notdir $@)
 $(BINARIES): $(SOURCES)
 	env GOOS=linux $(GO) build $(LDFLAGS) -o ./$@ -v ./$(dir $@)
-	$(DOCKER) build ./$(dir $@) -t $(DOCKER_TAG_PREFIX)$(NAME:sl-%=%)$(DOCKER_TAG_SUFFIX)
+	$(DOCKER) build ./$(dir $@) -t $(DOCKER_TAG_PREFIX)$(NAME:spaceplane-%=%)$(DOCKER_TAG_SUFFIX)
 
 ################
 ## gRPC/Protobuf 

@@ -1,4 +1,4 @@
-package: github.com/kayteh/saving-light
+package: github.com/kayteh/spaceplane
 import:
 - package: google.golang.org/grpc
   version: ^1.0.5

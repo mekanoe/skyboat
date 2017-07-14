@@ -1,0 +1,87 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "cmd/coordinator/rpc/coordinator.proto",
+    "version": "version not set"
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/game-servers": {
+      "get": {
+        "operationId": "GetGameServers",
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/coordinatorGameServerList"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "qs",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "Coordinator"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "coordinatorGameServer": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "annotations": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "coordinatorGameServerList": {
+      "type": "object",
+      "properties": {
+        "servers": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/coordinatorGameServer"
+          }
+        }
+      }
+    },
+    "coordinatorServerQuery": {
+      "type": "object",
+      "properties": {
+        "query": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "qs": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
