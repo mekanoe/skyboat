@@ -68,10 +68,12 @@ RAMLFLAGS :=
 ## Docker vars
 
 # Our repo org root
-DOCKER_TAG_PREFIX = quay.io/skyboat/
+DOCKER_TAG_PREFIX = skyboat/
 
 # The image tag, hopefully just the git hash.
 DOCKER_TAG_SUFFIX ?= :$(HASH)$(DIRTY)
+
+DOCKER_PUSH ?= 0
 
 # Lists the general images for Docker build targets.
 DOCKER_GENERAL := $(shell ls -d misc/dockerfiles/* | sed 's/misc\/dockerfiles\///g')
@@ -83,7 +85,7 @@ RETHINKDB_ADDR ?= $(shell docker-compose port rethink 28015)
 ### TARGETS ###
 ################
 default: all
-all: gen js raml bin
+all: js raml bin
 
 ################
 ## Go code
@@ -93,6 +95,7 @@ all: gen js raml bin
 bin: $(BINARIES)
 $(BINARIES): NAME = $(notdir $@)
 $(BINARIES): $(SOURCES)
+	$(GO) generate ./$(dir $@)/...
 	@if [ `docker-compose ps | grep -c build-server` == "0" ]; then\
 	  docker-compose up -d build-server;\
 	fi
@@ -102,6 +105,7 @@ $(BINARIES): $(SOURCES)
 	  mv /go/bin/$(NAME) ./$(NAME)'
 	@if [ -e ./$(dir $@)/Dockerfile ]; then\
 	  $(DOCKER) build ./$(dir $@) -t $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
+	  [ $(DOCKER_PUSH) == "1" ] && $(DOCKER) push $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
 	fi
 
 .PHONY: test
@@ -129,7 +133,7 @@ $(RAMLTARGETS):
 ## Codegen
 .PHONY: gen
 gen:
-	go generate $(shell glide nv)
+	go generate `glide nv`
 
 ################
 ## Docker & Kubernetes
@@ -157,7 +161,7 @@ tmpl:
 .PHONY: kup
 kup:
 	@if [ `helm list | grep -c skyboat-dev` == "0" ]; then\
-	  helm install ./charts --name skyboat-dev;\
+	  helm install ./charts --namespace skyboat --name skyboat-dev --set docker_tag=$(HASH)$(DIRTY),repo_prefix=$(DOCKER_TAG_PREFIX);\
 	else\
-	  helm upgrade skyboat-dev ./charts;\
+	  helm upgrade skyboat-dev ./charts --namespace skyboat --set docker_tag=$(HASH)$(DIRTY),repo_prefix=$(DOCKER_TAG_PREFIX);\
 	fi

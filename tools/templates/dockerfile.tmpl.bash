@@ -1,11 +1,11 @@
 DIRNAME=$(basename $PWD)
 FILE="FROM alpine:3.6
-# MAINTAINER Katie T. <katie@kat.cafe>
+# MAINTAINER Skyboat.io <engineering@skyboat.io>
 
 RUN apk add --no-cache su-exec && \
-    adduser -S spln
+    adduser -S skyboat
 
-CMD [\"su-exec\", \"spln\", \"$DIRNAME\"]
+CMD [\"su-exec\", \"skyboat\", \"$DIRNAME\"]
 EXPOSE 2390
 COPY ./$DIRNAME /usr/bin/$DIRNAME
 "

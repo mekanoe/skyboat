@@ -32,3 +32,5 @@ vendor
 ./launcher/launcher
 ./coordinator/coordinator
 ./restotest
+
+launcher/launcher

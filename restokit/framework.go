@@ -19,6 +19,9 @@ type Restokit struct {
 	Server   *fasthttp.Server
 	Listener net.Listener
 
+	HealthCheck    fasthttp.RequestHandler
+	ReadinessCheck fasthttp.RequestHandler
+
 	middleware []Middleware
 
 	addr string
@@ -35,9 +38,10 @@ func NewRestokit(addr string) *Restokit {
 		Server: &fasthttp.Server{
 			Name: serverName,
 		},
-		addr: addr,
+		HealthCheck:    defaultHealthCheck,
+		ReadinessCheck: defaultReadinessCheck,
+		addr:           addr,
 	}
-
 	return r
 }
 
@@ -59,6 +63,8 @@ func (r *Restokit) Start() error {
 	var err error
 
 	r.Server.Handler = r.middlewareStack(r.Router.Handler)
+	r.Router.GET("/+/healthz", r.HealthCheck)
+	r.Router.GET("/+/readiness", r.ReadinessCheck)
 
 	if r.Listener == nil {
 		err = r.Server.ListenAndServe(r.addr)
@@ -67,4 +73,14 @@ func (r *Restokit) Start() error {
 	}
 
 	return err
+}
+
+func defaultReadinessCheck(ctx *fasthttp.RequestCtx) {
+	ctx.SetStatusCode(200)
+	ctx.WriteString("ok")
+}
+
+func defaultHealthCheck(ctx *fasthttp.RequestCtx) {
+	ctx.SetStatusCode(200)
+	ctx.WriteString("ok")
 }

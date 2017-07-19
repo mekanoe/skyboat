@@ -1,5 +1,5 @@
 docker_tag:
-repo_prefix: quay.io/spaceplane
+repo_prefix: quay.io/skyboat
 pull_policy: Always
 
 launcher:
