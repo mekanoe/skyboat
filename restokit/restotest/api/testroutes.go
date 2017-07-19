@@ -1,5 +1,5 @@
 // Package api is for API routes. Everything here is ideally unexported.
-package api
+package api // import "skyboat.io/x/restokit/restotest/api"
 
 //go:generate go run $PWD/restokit/codegen/codegen.go $CWD
 

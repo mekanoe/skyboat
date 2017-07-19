@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  build-server:
+    image: golang:1.8.3-alpine3.6
+    command: tail -f /dev/null
+    volumes:
+      - .:/go/src/skyboat.io/x
+      - .cache/go-pkg:/go/pkg
+      

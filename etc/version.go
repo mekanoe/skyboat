@@ -1,4 +1,4 @@
-package etc
+package etc // import "skyboat.io/x/etc"
 
 var (
 	Ref       = "dev"

@@ -1,10 +1,10 @@
-package main
+package main // import "skyboat.io/x/restokit/restotest"
 
 import (
 	"fmt"
 
-	"github.com/kayteh/spaceplane/restokit"
-	"github.com/kayteh/spaceplane/restokit/restotest/api"
+	"skyboat.io/x/restokit"
+	"skyboat.io/x/restokit/restotest/api"
 )
 
 func main() {

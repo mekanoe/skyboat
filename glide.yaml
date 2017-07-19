@@ -1,6 +1,13 @@
-package: github.com/kayteh/spaceplane
+package: skyboat.io
 import:
 - package: github.com/buaazp/fasthttprouter
-  version: ^0.1.1
+- package: github.com/hydrogen18/memlistener
 - package: github.com/valyala/fasthttp
-  version: ^20160617.0.0
+- package: k8s.io/api
+  subpackages:
+  - core/v1
+- package: k8s.io/client-go
+  subpackages:
+  - kubernetes
+  - rest
+- package: github.com/segmentio/ksuid

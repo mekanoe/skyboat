@@ -1,0 +1,4 @@
+apiVersion: v1
+description: skyboat.io, a PaaS for Game Servers
+name: skyboat
+version: 0.1.0

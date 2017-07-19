@@ -1,0 +1,6 @@
+docker_tag:
+repo_prefix: quay.io/spaceplane
+pull_policy: Always
+
+launcher:
+  server_pull_policy: Always

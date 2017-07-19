@@ -8,11 +8,17 @@ package api
 
 import (
 	"github.com/buaazp/fasthttprouter"
-	mw "github.com/kayteh/spaceplane/restokit/middleware"
+	mw "skyboat.io/x/restokit/middleware"
 )
+
+func noop() {
+	mw.Noop()
+}
 
 // FetchAPIRoutes is a generated function that takes a router, and injects the api routes into it.
 func FetchAPIRoutes(router *fasthttprouter.Router) {
+
+	router.Handle("GET", "/hello/:name", hello)
 
 	router.Handle("GET", "/test",
 		mw.VersionedRoute(mw.VersionedRouteMap{

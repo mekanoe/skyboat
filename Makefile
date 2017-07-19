@@ -21,7 +21,7 @@ SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 BINARIES := $(shell find . -type f -name 'main.go' ! -path './vendor/*' | sed -n 's/^..\([a-z]*\)\/main.go/.\/\1\/\1/gp')
 
 # The name of this repo in case things need it below.
-SL = gitlab.com/packetgg/hearth
+SL = skyboat.io/x
 
 
 ################
@@ -68,7 +68,7 @@ RAMLFLAGS :=
 ## Docker vars
 
 # Our repo org root
-DOCKER_TAG_PREFIX = us.gcr.io/packetgg/hearth/
+DOCKER_TAG_PREFIX = quay.io/skyboat/
 
 # The image tag, hopefully just the git hash.
 DOCKER_TAG_SUFFIX ?= :$(HASH)$(DIRTY)
@@ -93,8 +93,14 @@ all: gen js raml bin
 bin: $(BINARIES)
 $(BINARIES): NAME = $(notdir $@)
 $(BINARIES): $(SOURCES)
-	env GOOS=linux $(GO) build $(LDFLAGS) -o ./$@ -v ./$(dir $@)
-	@if [ -e 'Dockerfile' ]; then\
+	@if [ `docker-compose ps | grep -c build-server` == "0" ]; then\
+	  docker-compose up -d build-server;\
+	fi
+	docker-compose exec build-server ash -c '\
+	  cd /go/src/$(SL); \
+	  $(GO) install $(LDFLAGS) -v ./$(dir $@) &&\
+	  mv /go/bin/$(NAME) ./$(NAME)'
+	@if [ -e ./$(dir $@)/Dockerfile ]; then\
 	  $(DOCKER) build ./$(dir $@) -t $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
 	fi
 
@@ -142,3 +148,16 @@ clean-all: clean
 clean:
 	-rm -f $(BINARIES)
 	-rm -f $(RAMLTARGETS)
+
+
+.PHONY: tmpl
+tmpl:
+	bash ./tools/tmpl.bash $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: kup
+kup:
+	@if [ `helm list | grep -c skyboat-dev` == "0" ]; then\
+	  helm install ./charts --name skyboat-dev;\
+	else\
+	  helm upgrade skyboat-dev ./charts;\
+	fi

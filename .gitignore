@@ -23,7 +23,12 @@ _testmain.go
 *.test
 *.prof
 
-vendor/*/*
+vendor
+.cache
 
-/spaceplane-*
 .gotmp
+\.vscode/
+
+./launcher/launcher
+./coordinator/coordinator
+./restotest

@@ -25,7 +25,7 @@ func VersionedRoute(i VersionedRouteMap) fasthttp.RequestHandler {
 			route = i[v]
 		}
 
-		ctx.Response.Header.Set("Sgg-Api-Version", v)
+		ctx.Response.Header.Set("SPLN-API-Version", v)
 
 		route(ctx)
 	}

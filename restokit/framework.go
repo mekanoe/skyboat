@@ -1,39 +1,70 @@
-package restokit
+package restokit // import "skyboat.io/x/restokit"
 
 import (
 	"fmt"
+	"net"
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/valyala/fasthttp"
 
-	"github.com/kayteh/spaceplane/etc"
+	"skyboat.io/x/etc"
 )
+
+type Middleware func(fasthttp.RequestHandler) fasthttp.RequestHandler
 
 // Restokit is the REST framework common building block.
 // The system involves simple codegen tricks.
 type Restokit struct {
-	Router *fasthttprouter.Router
-	Server *fasthttp.Server
-	addr   string
+	Router   *fasthttprouter.Router
+	Server   *fasthttp.Server
+	Listener net.Listener
+
+	middleware []Middleware
+
+	addr string
 }
+
+var (
+	serverName = fmt.Sprintf("spaceplane restokit/%s (%s)", etc.Version, etc.Ref)
+)
 
 // NewRestokit creates a new restokit with the specified address
 func NewRestokit(addr string) *Restokit {
-	resto := &Restokit{
+	r := &Restokit{
 		Router: fasthttprouter.New(),
-		addr:   addr,
+		Server: &fasthttp.Server{
+			Name: serverName,
+		},
+		addr: addr,
 	}
 
-	srv := &fasthttp.Server{
-		Name:    fmt.Sprintf("spaceplane restokit/%s (%s)", etc.Version, etc.Ref),
-		Handler: resto.Router.Handler,
-	}
+	return r
+}
 
-	resto.Server = srv
-	return resto
+// AddGlobalMiddleware to the middleware stack. Only works before starting.
+func (r *Restokit) AddGlobalMiddleware(fn Middleware) {
+	r.middleware = append(r.middleware, fn)
+}
+
+func (r *Restokit) middlewareStack(initialHandler fasthttp.RequestHandler) fasthttp.RequestHandler {
+	handler := initialHandler
+	for _, mw := range r.middleware {
+		handler = mw(handler)
+	}
+	return handler
 }
 
 // Start starts the server as built.
 func (r *Restokit) Start() error {
-	return r.Server.ListenAndServe(r.addr)
+	var err error
+
+	r.Server.Handler = r.middlewareStack(r.Router.Handler)
+
+	if r.Listener == nil {
+		err = r.Server.ListenAndServe(r.addr)
+	} else {
+		err = r.Server.Serve(r.Listener)
+	}
+
+	return err
 }
