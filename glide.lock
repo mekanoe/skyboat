@@ -1,5 +1,5 @@
-hash: a6fc1c08e31bc9c2201f9d1ab83adda6c10ac680dc194b88a3dcf8cc03d0a99a
-updated: 2017-07-18T23:12:08.924235-05:00
+hash: f7a308f50f0fe0eb2185926f017717a1dd5b80e3258889287be27ef278590a68
+updated: 2017-07-19T18:52:34.585597685-05:00
 imports:
 - name: github.com/buaazp/fasthttprouter
   version: ade4e2031af3aed7fffd241084aad80a58faf421
@@ -72,6 +72,8 @@ imports:
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/segmentio/ksuid
   version: e3c9952840557adbb3538b1039e783d44c21ae4a
+- name: github.com/Sirupsen/logrus
+  version: ba1b36c82c5e05c4f912a88eab0dcd91a171688f
 - name: github.com/spf13/pflag
   version: 9ff6c6923cfffbcd502984b8e0c80539a94968b7
 - name: github.com/ugorji/go
@@ -174,7 +176,6 @@ imports:
 - name: k8s.io/client-go
   version: 1850dd66e4213a26bd70d0b85fee4176d324b845
   subpackages:
-  - '#3.0.0'
   - discovery
   - kubernetes
   - kubernetes/scheme

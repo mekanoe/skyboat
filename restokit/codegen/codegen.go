@@ -104,7 +104,7 @@ func main() {
 func walker(path string, info os.FileInfo, err error) error {
 	if filepath.Ext(path) != ".go" || filepath.Base(path) == "api.generated.go" ||
 		(strings.HasPrefix(filepath.Base(path), "test_") && os.Getenv("TEST_ROUTES") != "1") {
-		log.Printf("%s skipped", path)
+		// log.Printf("%s skipped", path)
 		return nil
 	}
 
@@ -135,7 +135,7 @@ func processFile(path string) {
 	}
 
 	wg.Done()
-	log.Printf("%s finished", path)
+	// log.Printf("%s finished", path)
 }
 
 // 1 = verb
@@ -238,7 +238,7 @@ func renderGoFile(tmplPath, cwd string) {
 
 	goFmt(cwd + "/api.generated.go")
 
-	log.Print("Go done.")
+	fmt.Printf("📝 %s/api.generated.go\n", cwd)
 }
 
 func renderJSFile(tmplPath, cwd string) {

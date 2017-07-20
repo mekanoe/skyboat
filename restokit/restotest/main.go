@@ -8,8 +8,8 @@ import (
 )
 
 func main() {
-	resto := restokit.NewRestokit(":4665")
+	resto := restokit.NewRestokit("127.0.0.1:4665")
 	api.FetchAPIRoutes(resto.Router)
-	fmt.Println("started :4665")
+	fmt.Println("started 127.0.0.1:4665")
 	resto.Start()
 }

@@ -34,3 +34,7 @@ vendor
 ./restotest
 
 launcher/launcher
+
+*.coverprofile
+
+restotest

@@ -3,11 +3,15 @@ package restokit // import "skyboat.io/x/restokit"
 import (
 	"fmt"
 	"net"
+	"time"
 
 	"github.com/buaazp/fasthttprouter"
 	"github.com/valyala/fasthttp"
 
+	"github.com/Sirupsen/logrus"
+	"github.com/segmentio/ksuid"
 	"skyboat.io/x/etc"
+	"skyboat.io/x/util"
 )
 
 type Middleware func(fasthttp.RequestHandler) fasthttp.RequestHandler
@@ -18,6 +22,7 @@ type Restokit struct {
 	Router   *fasthttprouter.Router
 	Server   *fasthttp.Server
 	Listener net.Listener
+	Logger   *logrus.Entry
 
 	HealthCheck    fasthttp.RequestHandler
 	ReadinessCheck fasthttp.RequestHandler
@@ -38,10 +43,19 @@ func NewRestokit(addr string) *Restokit {
 		Server: &fasthttp.Server{
 			Name: serverName,
 		},
+		Logger:         logrus.New().WithFields(logrus.Fields{}),
 		HealthCheck:    defaultHealthCheck,
 		ReadinessCheck: defaultReadinessCheck,
 		addr:           addr,
 	}
+
+	prod, _ := util.Getenvdef("IS_PROD", false).Bool()
+	if prod {
+		logrus.SetFormatter(&logrus.JSONFormatter{})
+	}
+
+	r.AddGlobalMiddleware(r.logging)
+
 	return r
 }
 
@@ -76,11 +90,44 @@ func (r *Restokit) Start() error {
 }
 
 func defaultReadinessCheck(ctx *fasthttp.RequestCtx) {
+	ctx.SetUserValue("log:silent", true)
 	ctx.SetStatusCode(200)
 	ctx.WriteString("ok")
 }
 
 func defaultHealthCheck(ctx *fasthttp.RequestCtx) {
+	ctx.SetUserValue("log:silent", true)
 	ctx.SetStatusCode(200)
 	ctx.WriteString("ok")
+}
+
+func (r *Restokit) logging(h fasthttp.RequestHandler) fasthttp.RequestHandler {
+	return func(ctx *fasthttp.RequestCtx) {
+		startTime := time.Now()
+		reqid, err := ksuid.NewRandom()
+		if err != nil {
+			r.Logger.WithError(err).Error("Error in logger: ksuid create")
+			ctx.Error("unrecoverable error in logger", 500)
+		}
+
+		logEntry := r.Logger.WithField("reqid", reqid.String())
+
+		ctx.SetUserValue("log", logEntry)
+		ctx.SetUserValue("reqid", reqid)
+		ctx.SetUserValue("log:silent", false)
+
+		h(ctx)
+
+		if !ctx.UserValue("log:silent").(bool) {
+			logEntry.WithFields(logrus.Fields{
+				"url":           string(ctx.URI().Path()),
+				"method":        string(ctx.Request.Header.Method()),
+				"referer":       string(ctx.Request.Header.Referer()),
+				"code":          ctx.Response.StatusCode(),
+				"user_agent":    string(ctx.Request.Header.UserAgent()),
+				"bytes":         len(ctx.Response.Body()),
+				"response_time": time.Since(startTime).Nanoseconds() / 1000,
+			}).Infof("HTTP => %d %s %s", ctx.Response.StatusCode(), ctx.Request.Header.Method(), ctx.URI())
+		}
+	}
 }

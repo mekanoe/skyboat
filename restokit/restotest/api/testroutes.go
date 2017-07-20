@@ -20,8 +20,9 @@ func testGetv1(ctx *fasthttp.RequestCtx) {
 }
 
 // GET /hello/:name
+// NoLogging
 func hello(ctx *fasthttp.RequestCtx) {
-	ctx.WriteString(fmt.Sprintf("Hello, %s", ctx.UserValue("name")))
+	ctx.WriteString(fmt.Sprintf("Hello, %s!", ctx.UserValue("name")))
 }
 
 // // POST /test v1

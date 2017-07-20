@@ -1,4 +1,4 @@
-package: skyboat.io
+package: skyboat.io/x
 import:
 - package: github.com/buaazp/fasthttprouter
 - package: github.com/hydrogen18/memlistener
@@ -11,3 +11,4 @@ import:
   - kubernetes
   - rest
 - package: github.com/segmentio/ksuid
+- package: github.com/Sirupsen/logrus

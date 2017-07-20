@@ -30,6 +30,7 @@ spec:
       - name: skyboat-launcher
         image: "{{ .Values.repo_prefix }}launcher:{{ .Values.docker_tag }}"
         imagePullPolicy: {{ .Values.pull_policy }}
+        tty: false
         livenessProbe:
           httpGet:
             path: /+/healthz
@@ -47,5 +48,7 @@ spec:
         - containerPort: 2390
           name: http
         env:
+        - name: IS_PROD
+          value: "1"
         - name: IMAGE_PULL_POLICY
           value: {{ .Values.launcher.server_pull_policy }}

@@ -2,6 +2,7 @@
 ## Important/Override-able bins.
 GO ?= go
 DOCKER ?= docker
+COMPOSE ?= docker-compose -H /var/run/docker.sock
 NPM ?= npm
 NODE ?= node
 RAML2HTML ?= raml2html
@@ -91,28 +92,44 @@ all: js raml bin
 ## Go code
 
 # Builds a Linux binary of a target cmd, then builds it's Docker image.
-# The Docker image will be named without the `sl-` prefix, e.g. `sl-launcher` => `launcher`
+
 bin: $(BINARIES)
 $(BINARIES): NAME = $(notdir $@)
 $(BINARIES): $(SOURCES)
-	$(GO) generate ./$(dir $@)/...
+	@echo "🛠 building $@ codegen"	
+	@$(GO) generate ./$(dir $@)...
 	@if [ `docker-compose ps | grep -c build-server` == "0" ]; then\
+	  echo "> starting build server";\
 	  docker-compose up -d build-server;\
 	fi
-	docker-compose exec build-server ash -c '\
+	@echo "🛠 building $@ binary"
+	@docker-compose exec build-server ash -c '\
 	  cd /go/src/$(SL); \
 	  $(GO) install $(LDFLAGS) -v ./$(dir $@) &&\
 	  mv /go/bin/$(NAME) ./$(NAME)'
 	@if [ -e ./$(dir $@)/Dockerfile ]; then\
-	  $(DOCKER) build ./$(dir $@) -t $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
-	  [ $(DOCKER_PUSH) == "1" ] && $(DOCKER) push $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
+	  echo "🛠 building $@ docker image $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
+	  $(DOCKER) build ./$(dir $@) -q -t $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
+	  if [ $(DOCKER_PUSH) == "1" ]; then\
+	   echo "📤 pushing $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
+	   $(DOCKER) push $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX) >/dev/null;\
+	  else\
+	   echo "💤 not pushing $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
+	  fi;\
 	fi
+	@echo "✅ done!"
 
 .PHONY: test
 test:
-	env RETHINKDB_ADDR=$(RETHINKDB_ADDR) $(GO) test $(shell glide nv)
-	env RETHINKDB_ADDR=$(RETHINKDB_ADDR) overalls -project=$(SL) -covermode=set
+	$(GO) test $(shell glide nv)
+	overalls -project=$(SL) -covermode=set
 	go tool cover -func=overalls.coverprofile
+
+.PHONY: coverage
+coverage: test
+coverage:
+	go tool cover -html=overalls.coverprofile
+	
 
 ################
 ## JavaScript
@@ -165,3 +182,13 @@ kup:
 	else\
 	  helm upgrade skyboat-dev ./charts --namespace skyboat --set docker_tag=$(HASH)$(DIRTY),repo_prefix=$(DOCKER_TAG_PREFIX);\
 	fi
+
+.PHONY: reset-env
+reset-env:
+	docker-compose down
+	-rm -rf .cache
+	helm delete --purge skyboat-dev
+
+restotest: $(shell find ./restokit -name "*.go")
+	$(GO) generate ./restokit/...
+	$(GO) run ./restokit/restotest/main.go

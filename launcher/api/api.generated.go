@@ -11,12 +11,9 @@ import (
 	mw "skyboat.io/x/restokit/middleware"
 )
 
-func noop() {
-	mw.Noop()
-}
-
-// FetchAPIRoutes is a generated function that takes a router, and injects the api routes into it.
+// FetchAPIRoutes is a **generated** function that takes a router, and injects the api routes into it.
 func FetchAPIRoutes(router *fasthttprouter.Router) {
+	mw.Noop()
 
 	router.Handle("POST", "/launch", postLaunch)
 

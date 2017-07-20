@@ -12,3 +12,8 @@ type LaunchedInstance struct {
 	IP   string
 	Port int
 }
+
+type Response struct {
+	Success bool
+	Payload interface{}
+}

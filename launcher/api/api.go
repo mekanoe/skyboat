@@ -3,6 +3,7 @@ package api // import "skyboat.io/x/launcher/api"
 import (
 	"fmt"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/segmentio/ksuid"
 	"github.com/valyala/fasthttp"
 	"k8s.io/api/core/v1"
@@ -15,17 +16,23 @@ import (
 
 // POST /launch
 func postLaunch(ctx *fasthttp.RequestCtx) {
+	log := ctx.UserValue("log").(*logrus.Entry)
 	k8s := ctx.UserValue("k8s").(*kubernetes.Clientset)
 	lr := &launchertypes.LaunchRequest{}
-	httputil.GetJSON(ctx, lr)
 
-	id, err := ksuid.NewRandom()
+	err := httputil.GetJSON(ctx, lr)
 	if err != nil {
-		ctx.Error(err.Error(), 500)
+		httputil.Error("json parse failed", err, ctx, log)
 		return
 	}
 
-	p := k8s.CoreV1().Pods(lr.Namespace)
+	id, err := ksuid.NewRandom()
+	if err != nil {
+		httputil.Error("ksuid creation", err, ctx, log)
+		return
+	}
+
+	p := k8s.CoreV1().Pods("test")
 
 	/*
 		apiVersion: v1
@@ -46,10 +53,19 @@ func postLaunch(ctx *fasthttp.RequestCtx) {
 
 	pod.Name = fmt.Sprintf("%s-%s", lr.Namespace, idStr)
 	pod.Annotations = map[string]string{
-		"spaceplane/launched": "true",
-		"spaceplane/id":       idStr,
-		"spaceplane/ns":       lr.Namespace,
+		"skyboat.io/launched": "true",
+		"skyboat.io/id":       idStr,
+		"skyboat.io/ns":       lr.Namespace,
 	}
 
-	p.Create(pod)
+	createdPod, err := p.Create(pod)
+	if err != nil {
+		httputil.Error("pod creation failed", err, ctx, log)
+		return
+	}
+
+	httputil.Write(ctx, launchertypes.Response{
+		Success: true,
+		Payload: createdPod,
+	})
 }
