@@ -92,6 +92,7 @@ all: js raml bin
 
 bin: $(BINARIES)
 $(BINARIES): NAME = $(notdir $@)
+$(BINARIES): IMG = $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)
 $(BINARIES): $(SOURCES)
 # --> codegen
 	@echo "🛠 building $@ codegen"	
@@ -113,13 +114,13 @@ $(BINARIES): $(SOURCES)
 # --> build docker stuff if docker exists
 # -->--> if push, then push.
 	@if [ -e ./$(dir $@)/Dockerfile ]; then\
-	  echo "🛠 building $@ docker image $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
-	  $(DOCKER) build ./$(dir $@) -q -t $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
+	  echo "🛠 building $@ docker image $(IMG)";\
+	  $(DOCKER) build ./$(dir $@) -q -t $(IMG);\
 	  if [ $(DOCKER_PUSH) == "1" ]; then\
-	   echo "📤 pushing $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
-	   $(DOCKER) push $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX) >/dev/null;\
+	   echo "📤 pushing $(IMG)";\
+	   $(DOCKER) push $(IMG) >/dev/null;\
 	  else\
-	   echo "💤 not pushing $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
+	   echo "💤 not pushing, run:\n  $ docker push $(IMG)";\
 	  fi;\
 	fi
 # ***
