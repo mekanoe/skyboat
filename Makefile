@@ -2,7 +2,6 @@
 ## Important/Override-able bins.
 GO ?= go
 DOCKER ?= docker
-COMPOSE ?= docker-compose -H /var/run/docker.sock
 NPM ?= npm
 NODE ?= node
 RAML2HTML ?= raml2html
@@ -74,13 +73,11 @@ DOCKER_TAG_PREFIX = skyboat/
 # The image tag, hopefully just the git hash.
 DOCKER_TAG_SUFFIX ?= :$(HASH)$(DIRTY)
 
+# Push or no push?
 DOCKER_PUSH ?= 0
 
 # Lists the general images for Docker build targets.
 DOCKER_GENERAL := $(shell ls -d misc/dockerfiles/* | sed 's/misc\/dockerfiles\///g')
-
-RETHINKDB_ADDR ?= $(shell docker-compose port rethink 28015)
-
 
 ##############
 ### TARGETS ###
@@ -96,17 +93,25 @@ all: js raml bin
 bin: $(BINARIES)
 $(BINARIES): NAME = $(notdir $@)
 $(BINARIES): $(SOURCES)
+# --> codegen
 	@echo "🛠 building $@ codegen"	
 	@$(GO) generate ./$(dir $@)...
+# ***
+# --> build server
 	@if [ `docker-compose ps | grep -c build-server` == "0" ]; then\
-	  echo "> starting build server";\
+	  echo "⚙️ starting build server";\
 	  docker-compose up -d build-server;\
 	fi
+# ***
+# --> run build
 	@echo "🛠 building $@ binary"
 	@docker-compose exec build-server ash -c '\
 	  cd /go/src/$(SL); \
 	  $(GO) install $(LDFLAGS) -v ./$(dir $@) &&\
 	  mv /go/bin/$(NAME) ./$(NAME)'
+# ***
+# --> build docker stuff if docker exists
+# -->--> if push, then push.
 	@if [ -e ./$(dir $@)/Dockerfile ]; then\
 	  echo "🛠 building $@ docker image $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
 	  $(DOCKER) build ./$(dir $@) -q -t $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX);\
@@ -117,6 +122,7 @@ $(BINARIES): $(SOURCES)
 	   echo "💤 not pushing $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)";\
 	  fi;\
 	fi
+# ***
 	@echo "✅ done!"
 
 .PHONY: test
@@ -192,3 +198,8 @@ reset-env:
 restotest: $(shell find ./restokit -name "*.go")
 	$(GO) generate ./restokit/...
 	$(GO) run ./restokit/restotest/main.go
+
+.PHONY: kcurl
+kcurl:
+	kubectl run -i -t alpine-test --image=alpine --restart=Never -- ash -c '(apk add --no-cache curl; ash)'
+	kubectl delete pod alpine-test

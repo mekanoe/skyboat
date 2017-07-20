@@ -38,3 +38,5 @@ launcher/launcher
 *.coverprofile
 
 restotest
+
+api.generated.go
