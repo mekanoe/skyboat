@@ -2,9 +2,13 @@
 ## Important/Override-able bins.
 GO ?= go
 DOCKER ?= docker
+DOCKER_COMPOSE ?= docker-compose
+GLIDE ?= glide
+HELM ?= helm
+KUBECTL ?= kubectl
 NPM ?= npm
 NODE ?= node
-RAML2HTML ?= raml2html
+OVERALLS ?= overalls
 
 
 ################
@@ -83,7 +87,7 @@ DOCKER_GENERAL := $(shell ls -d misc/dockerfiles/* | sed 's/misc\/dockerfiles\//
 ### TARGETS ###
 ################
 default: all
-all: js raml bin
+all: check js raml bin
 
 ################
 ## Go code
@@ -95,32 +99,32 @@ $(BINARIES): NAME = $(notdir $@)
 $(BINARIES): IMG = $(DOCKER_TAG_PREFIX)$(NAME)$(DOCKER_TAG_SUFFIX)
 $(BINARIES): $(SOURCES)
 # --> codegen
-	@echo "🛠 building $@ codegen"	
+	@echo "🛠 building $(NAME) codegen"	
 	@$(GO) generate ./$(dir $@)...
 # ***
 # --> build server
-	@if [ `docker-compose ps | grep -c build-server` == "0" ]; then\
+	@if [ `$(DOCKER_COMPOSE) ps | grep -c build-server` == "0" ]; then\
 	  echo "⚙️ starting build server";\
-	  docker-compose up -d build-server;\
+	  $(DOCKER_COMPOSE) up -d build-server;\
 	fi
 # ***
 # --> run build
-	@echo "🛠 building $@ binary"
-	@docker-compose exec build-server ash -c '\
+	@echo "🛠 building $(NAME) binary"
+	@$(DOCKER_COMPOSE) exec build-server ash -c '\
 	  cd /go/src/$(SL); \
-	  $(GO) install $(LDFLAGS) -v ./$(dir $@) &&\
+	  go install $(LDFLAGS) -v ./$(dir $@) &&\
 	  mv /go/bin/$(NAME) ./$(NAME)'
 # ***
 # --> build docker stuff if docker exists
 # -->--> if push, then push.
 	@if [ -e ./$(dir $@)/Dockerfile ]; then\
-	  echo "🛠 building $@ docker image $(IMG)";\
+	  echo "🛠 building $(NAME) docker image $(IMG)";\
 	  $(DOCKER) build ./$(dir $@) -q -t $(IMG);\
 	  if [ $(DOCKER_PUSH) == "1" ]; then\
 	   echo "📤 pushing $(IMG)";\
 	   $(DOCKER) push $(IMG) >/dev/null;\
 	  else\
-	   echo "💤 not pushing, run:\n  $ docker push $(IMG)";\
+	   echo "💤 not pushing, run:\n  \$ $(DOCKER) push $(IMG)";\
 	  fi;\
 	fi
 # ***
@@ -128,14 +132,14 @@ $(BINARIES): $(SOURCES)
 
 .PHONY: test
 test:
-	$(GO) test $(shell glide nv)
-	overalls -project=$(SL) -covermode=set
-	go tool cover -func=overalls.coverprofile
+	$(GO) test $(shell $(GLIDE) nv)
+	$(OVERALLS) -project=$(SL) -covermode=set
+	$(GO) tool cover -func=overalls.coverprofile
 
 .PHONY: coverage
 coverage: test
 coverage:
-	go tool cover -html=overalls.coverprofile
+	$(GO) tool cover -html=overalls.coverprofile
 	
 
 ################
@@ -157,7 +161,7 @@ $(RAMLTARGETS):
 ## Codegen
 .PHONY: gen
 gen:
-	go generate `glide nv`
+	$(GO) generate `$(GLIDE) nv`
 
 ################
 ## Docker & Kubernetes
@@ -168,8 +172,28 @@ $(DOCKER_GENERAL):
 	$(DOCKER) build misc/dockerfiles/$@ -t $(DOCKER_TAG_PREFIX)$@$(DOCKER_TAG_SUFFIX)
 	$(DOCKER) push $(DOCKER_TAG_PREFIX)$@$(DOCKER_TAG_SUFFIX)
 
+.PHONY: kcurl
+kcurl:
+	$(KUBECTL) run -i -t alpine-test --image=alpine --restart=Never -- ash -c '(apk add --no-cache curl; ash)'
+	$(KUBECTL) delete pod alpine-test
+
+.PHONY: kup
+kup:
+	@if [ `$(HELM) list | grep -c skyboat-dev` == "0" ]; then\
+	  $(HELM) install ./charts --namespace skyboat --name skyboat-dev --set docker_tag=$(HASH)$(DIRTY),repo_prefix=$(DOCKER_TAG_PREFIX);\
+	else\
+	  $(HELM) upgrade skyboat-dev ./charts --namespace skyboat --set docker_tag=$(HASH)$(DIRTY),repo_prefix=$(DOCKER_TAG_PREFIX);\
+	fi
+
 ################
 ## Utilities
+.PHONY: check 
+check: CHECK_FOR = $(word 1, $(GO)) $(word 1, $(DOCKER)) $(word 1, $(DOCKER_COMPOSE)) $(word 1, $(GLIDE)) $(word 1, $(HELM)) $(word 1, $(KUBECTL)) $(word 1, $(NPM)) $(word 1, $(NODE)) $(word 1, $(OVERALLS))
+check:
+	@for chk in $(CHECK_FOR); do\
+	  hash $$chk 2>/dev/null || echo "🚧 Missing dependency: $$chk";\
+	done
+
 clean-all: clean
 
 .PHONY: clean
@@ -182,25 +206,12 @@ clean:
 tmpl:
 	bash ./tools/tmpl.bash $(filter-out $@,$(MAKECMDGOALS))
 
-.PHONY: kup
-kup:
-	@if [ `helm list | grep -c skyboat-dev` == "0" ]; then\
-	  helm install ./charts --namespace skyboat --name skyboat-dev --set docker_tag=$(HASH)$(DIRTY),repo_prefix=$(DOCKER_TAG_PREFIX);\
-	else\
-	  helm upgrade skyboat-dev ./charts --namespace skyboat --set docker_tag=$(HASH)$(DIRTY),repo_prefix=$(DOCKER_TAG_PREFIX);\
-	fi
-
 .PHONY: reset-env
 reset-env:
-	docker-compose down
+	$(DOCKER_COMPOSE) down
 	-rm -rf .cache
-	helm delete --purge skyboat-dev
+	$(HELM) delete --purge skyboat-dev
 
 restotest: $(shell find ./restokit -name "*.go")
 	$(GO) generate ./restokit/...
 	$(GO) run ./restokit/restotest/main.go
-
-.PHONY: kcurl
-kcurl:
-	kubectl run -i -t alpine-test --image=alpine --restart=Never -- ash -c '(apk add --no-cache curl; ash)'
-	kubectl delete pod alpine-test
